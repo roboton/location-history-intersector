@@ -24,7 +24,7 @@ function parseZipFile(zipFile) {
       // note zip does not have a .map function, so we push manually into the array
       var numFiles = 0;
       zip.forEach(function (relativePath, zipEntry) {
-        if (zipEntry.name.match(/Location History\/Semantic Location History\/2020\//)) {
+        if (zipEntry.name.match(/Location History\/Semantic Location History\/2020/)) {
           // parse the file contents as a string
           fileParsePromises.push(
             zipEntry.async('string').then(function(data) {
@@ -69,20 +69,36 @@ function extractPlaceVisit(placeVisit) {
       name = placeVisit.location.placeId;
     }
   }
-  var startDt = new Date(Math.floor(parseInt(
-    placeVisit.duration.startTimestampMs) / 60000) * 60000);
-  var endDt = new Date(Math.ceil(parseInt(
-    placeVisit.duration.endTimestampMs) / 60000) * 60000);
+  var startDt = null;
+  var endDt = null;
+  var startDtVal = null;
+  var endDtVal = null;
+  if (placeVisit.duration !== undefined) {
+    startDt = new Date(Math.floor(parseInt(
+      placeVisit.duration.startTimestampMs) / 60000) * 60000);
+    endDt = new Date(Math.ceil(parseInt(
+      placeVisit.duration.endTimestampMs) / 60000) * 60000);
+    startDtVal = startDt.valueOf();
+    endDtVal = endDt.valueOf();
+  }
+
+  var placeConfidence = null;
+  if (placeVisit.placeConfidence !== undefined) {
+    placeConfidence = placeVisit.placeConfidence;
+  }
+
+  var visitConfidence = null;
+  if (placeVisit.visitConfidence !== undefined) {
+    visitConfidence = placeVisit.visitConfidence;
+  }
   return([
     {"raw": name, "display": name},
-    {"raw": startDt.valueOf(), "display": startDt},
-    {"raw": endDt.valueOf(), "display": endDt},
-    {"raw": placeVisit.visitConfidence,
-      "display": placeVisit.visitConfidence},
-    {"raw": placeVisit.placeConfidence,
-      "display": placeVisit.placeConfidence},
+    {"raw": startDtVal, "display": startDt},
+    {"raw": endDtVal, "display": endDt},
+    {"raw": visitConfidence, "display": visitConfidence},
+    {"raw": placeConfidence, "display": placeConfidence},
     {"raw": placeVisit.location.placeId,
-      "display": placeVisit.location.placeId},
+     "display": placeVisit.location.placeId},
 ]);
 }
 
@@ -115,13 +131,19 @@ function processDecompressedFiles(decompressedFiles) {
       var tlObj = data.timelineObjects[j];
       // filter for placeVisits
       if (tlObj.placeVisit !== undefined) {
-        dataSet.push(extractPlaceVisit(tlObj.placeVisit));
+        var row = extractPlaceVisit(tlObj.placeVisit);
+        if (row[1]["raw"] !== null && row[5] !== null) {
+          dataSet.push(row);
+        }
         // TODO(robon): Decide if we should remove parent xor child objects
         if (tlObj.placeVisit.childVisits !== undefined) {
           // childVisits
           for (var k = 0; k < tlObj.placeVisit.childVisits.length; k++) {
             var childVisit  = tlObj.placeVisit.childVisits[k];
-            dataSet.push(extractPlaceVisit(childVisit));
+            var row = extractPlaceVisit(childVisit);
+            if (row[1]["raw"] !== null && row[5] !== null) {
+              dataSet.push(row);
+            }
           }
         }
       } else if (tlObj.activitySegment !== undefined) {
@@ -156,7 +178,8 @@ function processDecompressedFiles(decompressedFiles) {
                     { "title": "Location confidence", "targets": 4,
                       "render":  {_: "raw", display: "display", sort: "raw"}},
                     { "title": "Location ID", "targets": 5,
-                      "render":  {_: "raw", display: "display", sort: "raw", visible: false}}],
+                      "visible": false, "searchable": false,
+                      "render":  {_: "raw", display: "display", sort: "raw"}}],
      "order": [[ 2, "desc" ]],
      "drawCallback": function(settings) {
        // If some post-redraw work is in flight, cancel it
@@ -169,19 +192,8 @@ function processDecompressedFiles(decompressedFiles) {
        // Location count message
        var input = $("#location_table_filter").find("input")[0];
        if (!($(input).val()) && !intersectHashFilename) {
-         $("#locationCountMessage").html("");
          $("#downloadPlainButton").text("Download all rows to a .tsv file");
        } else {
-         redrawTimeout = setTimeout(function() {
-           numMatchedQueries = 0;
-           oTable.rows({filter: 'applied'}).every(function(rowIdx, tableLoop, rowLoop) {
-             var data = this.data();
-             numMatchedQueries += data[1];
-           });
-           var pct = (numQueries > 0) ? 100.0 * numMatchedQueries / numQueries : 0.0;
-           pct = Math.round(pct * 100.0) / 100.0;
-           $("#locationCountMessage").html(pct.toString() + "% of your locations matched.");
-         }, 500);
          // Put the correct count in the download button
          $("#downloadPlainButton").text("Download these " + oTable.rows({filter: 'applied'}).count() + " rows to a .tsv file");
        }
@@ -202,7 +214,6 @@ function processDecompressedFiles(decompressedFiles) {
         var hash = strToHash(placeTs, currentIntersectPw);
         curDt.setMinutes(curDt.getMinutes() + 1);
         if (intersectHashes[hash]) {
-          //console.log(data);
           return true;
         }
       }
@@ -214,7 +225,7 @@ function processDecompressedFiles(decompressedFiles) {
 
 function addExtraButtons() {
   // Header stuff
-  $(".fg-toolbar:first").append("<span id=\"locationCountMessage\"><span>");
+  // $(".fg-toolbar:first").append("<span id=\"locationCountMessage\"><span>");
 
   // Footer buttons (export file and do intersection)
   $(".fg-toolbar:last").append("<br><br><div id=\"downloadPlainDiv\">");
