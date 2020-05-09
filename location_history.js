@@ -1,4 +1,3 @@
-var MAX_QUERY_DISPLAY_CHARS = 40;
 var HASH_OUTPUT_FILENAME = "location_hashes.out";
 var PLAIN_OUTPUT_FILENAME = "locations_times.tsv";
 
@@ -135,10 +134,10 @@ function processDecompressedFiles(decompressedFiles) {
   // create html table from dataSet
   oTable = $('#location_table').DataTable({
     "data": dataSet,
-    "paging":   true,
-    "lengthChange":   false,
-    "searching":   true,
-    "iDisplayLength":  50,
+    "paging": true,
+    "lengthChange": false,
+    "searching": true,
+    "iDisplayLength": 50,
     "deferRender": true,
     "oLanguage": { "sSearch": "_INPUT_",
                    "sInfo": "Showing _START_ to _END_ of _TOTAL_ locations",
@@ -158,8 +157,8 @@ function processDecompressedFiles(decompressedFiles) {
                       "render":  {_: "raw", display: "display", sort: "raw"}},
                     { "title": "Location ID", "targets": 5,
                       "render":  {_: "raw", display: "display", sort: "raw", visible: false}}],
-     "order": [[ 2, "desc" ], [1, "desc"]],
-     "drawCallback": function( settings ) {
+     "order": [[ 2, "desc" ]],
+     "drawCallback": function(settings) {
        // If some post-redraw work is in flight, cancel it
        if (redrawTimeout) {
          clearTimeout(redrawTimeout);
@@ -175,7 +174,7 @@ function processDecompressedFiles(decompressedFiles) {
        } else {
          redrawTimeout = setTimeout(function() {
            numMatchedQueries = 0;
-           oTable.rows({filter: 'applied'}).every( function ( rowIdx, tableLoop, rowLoop ) {
+           oTable.rows({filter: 'applied'}).every(function(rowIdx, tableLoop, rowLoop) {
              var data = this.data();
              numMatchedQueries += data[1];
            });
@@ -200,7 +199,7 @@ function processDecompressedFiles(decompressedFiles) {
       var curDt = new Date(data[1]);
       while (curDt <= endDt) {
         var placeTs = data[5] + curDt.valueOf();
-        var hash = queryToHash(placeTs, currentIntersectPw);
+        var hash = strToHash(placeTs, currentIntersectPw);
         curDt.setMinutes(curDt.getMinutes() + 1);
         if (intersectHashes[hash]) {
           //console.log(data);
@@ -209,6 +208,7 @@ function processDecompressedFiles(decompressedFiles) {
       }
       return false;
     }
+    return true;
   });
 }
 
@@ -278,8 +278,8 @@ function downloadHashFileClick() {
     promptForPassword(true);
 }
 
-function queryToHash(query, pw) {
-    return sha256(query + pw);
+function strToHash(str, pw) {
+    return sha256(str+ pw);
 }
 
 function downloadHashFile(pw) {
@@ -291,8 +291,7 @@ function downloadHashFile(pw) {
     var endDt = new Date(data[2]["raw"]);
     var curDt = new Date(data[1]["raw"]);
     while (curDt <= endDt) {
-      //text = text + queryToHash(data[0]["raw"], pw) + "\n";
-      text = text + queryToHash(data[5]["raw"] + curDt.valueOf(), pw) + "\n";
+      text = text + strToHash(data[5]["raw"] + curDt.valueOf(), pw) + "\n";
       curDt.setMinutes(curDt.getMinutes() + 1);
     }
   });
