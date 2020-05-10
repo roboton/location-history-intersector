@@ -1,7 +1,7 @@
 var HASH_OUTPUT_FILENAME = "location_hashes.out";
 var PLAIN_OUTPUT_FILENAME = "locations_times.tsv";
 
-// For "intersections", when the user intersects their queries with a friend's
+// For "intersections", when the user intersects their locations with a friend's
 var intersectHashes = {};
 var intersectHashFilename = "";
 var intersectHideDataMode = false;
@@ -11,7 +11,7 @@ var numQueries = 0;
 var numKeywords = 0;
 var redrawTimeout = 0;
 
-var oTable;
+var oTable = null;
 
 // Read the zip file containing TakeOut data
 function parseZipFile(zipFile) {
@@ -45,13 +45,14 @@ function parseZipFile(zipFile) {
   );
 }
 
+// TODO(robon): use this
 function updateLoadingMessageQueries(numQueries, numUniqueQueries, startDate,
                                      endDate) {
   if (numQueries == 0) {
     $("#loadingMessage").html("Could not find any location history data in the zip file.");
   } else {
     $("#loadingMessage").html(
-      "Processed " + numQueries.toString() + " queries (" +
+      "Processed " + numQueries.toString() + " locations (" +
       numUniqueQueries.toString() + " unique) made between " +
       startDate.toLocaleDateString() + " and " + endDate.toLocaleDateString() +
       ". Average length: " +
@@ -153,7 +154,6 @@ function processDecompressedFiles(decompressedFiles) {
     }
   }
 
-  // create html table from dataSet
   oTable = $('#location_table').DataTable({
     "data": dataSet,
     "paging": true,
@@ -170,15 +170,17 @@ function processDecompressedFiles(decompressedFiles) {
      "columnDefs": [{ "title": "Location", "targets": 0,
                       "render":  {_: "raw", display: "display", sort: "raw"}},
                     { "title": "Start time", "targets": 1,
-                      "render":  {_: "display", display: "display", sort: "display"}},
+                      "render":  {_: "display", display: "display",
+                      sort: "display"}},
                     { "title": "End time", "targets": 2,
-                      "render":  {_: "display", display: "display", sort: "display"}},
+                      "render":  {_: "display", display: "display",
+                      sort: "display"}},
                     { "title": "Visit confidence", "targets": 3,
                       "render":  {_: "raw", display: "display", sort: "raw"}},
                     { "title": "Location confidence", "targets": 4,
                       "render":  {_: "raw", display: "display", sort: "raw"}},
                     { "title": "Location ID", "targets": 5,
-                      "visible": false, "searchable": false,
+                      //"visible": false, "searchable": false,
                       "render":  {_: "raw", display: "display", sort: "raw"}}],
      "order": [[ 2, "desc" ]],
      "drawCallback": function(settings) {
@@ -195,7 +197,8 @@ function processDecompressedFiles(decompressedFiles) {
          $("#downloadPlainButton").text("Download all rows to a .tsv file");
        } else {
          // Put the correct count in the download button
-         $("#downloadPlainButton").text("Download these " + oTable.rows({filter: 'applied'}).count() + " rows to a .tsv file");
+         $("#downloadPlainButton").text("Download these " +
+           oTable.rows({filter: 'applied'}).count() + " rows to a .tsv file");
        }
      }
   });
@@ -214,6 +217,7 @@ function processDecompressedFiles(decompressedFiles) {
         var hash = strToHash(placeTs, currentIntersectPw);
         curDt.setMinutes(curDt.getMinutes() + 1);
         if (intersectHashes[hash]) {
+          //console.log("matched: " + placeTs);
           return true;
         }
       }
@@ -244,6 +248,7 @@ function addExtraButtons() {
     for (var i = 0; i < files.length; i++) {
       parseHashFile(files[i]);
     }
+    this.value = null;
   });
 }
 
@@ -251,18 +256,24 @@ function promptForPassword(isDownload) {
   if (isDownload) {
     // It's a hash download button click
     $("#hash-password-title").html("Enter a password to protect your hash file: ");
-    $("#downloadHashButton").prop("disabled",true);
+    $("#downloadHashButton").prop("disabled", true);
   } else {
     // It's an intersect button click
     $("#hash-password-title").html("Ask your friend to enter the password for their hash file: ");
-    $("#intersectButton").prop("disabled",true);
+    $("#intersectButton").prop("disabled", true);
   }
   $("#hash-password-form").show();
   $("#hash-password").focus();
 
-  form = $("#hash-password-form").find("form").on("submit", function(event) {
+  // clear submit handler before adding new one
+  $("#hash-password-form").find("form").off("submit");
+  // set the password submit event handler
+  $("#hash-password-form").find("form").on("submit", function(event) {
+    // stop actual form submit
     event.preventDefault();
+    // hide the form after submit
     $("#hash-password-form").hide();
+    // do the correct action following submit
     if (isDownload) {
       alert("It may take up to 30 seconds to compute your hash file before the download proceeds. Hit OK to continue.");
       $("#hash-password-message").html("Computing hashes.");
@@ -277,7 +288,7 @@ function promptForPassword(isDownload) {
 }
 
 function intersectClick() {
-    // Hide the table so that the friend cannot see the queries
+    // Hide the table so that the friend cannot see the visits
     intersectHideDataMode = true;
     $("#intersectionMessage").html("The data is hidden while the intersection password is being entered.");
     oTable.draw();
@@ -336,15 +347,19 @@ function downloadPlainFileClick() {
 
 
 $("#file").change(function(event) {
-  // TODO(robon): Update loading message
-  //$("#loadingMessage").html("Loading location data...");
+  if (oTable !== null) {
+    oTable.clear();
+  }
+  $("#loadingMessage").html("Loading location data...");
   var files = event.target.files;
+  // TODO(robon): Update loading message
   // requestAnimationFrame ensures status message is painted
 	requestAnimationFrame(() => {
 		for (var i = 0; i < files.length; i++) {
 		  parseZipFile(files[i]);
 		}
 	});
+  $("#loadingMessage").html("");
 });
 
 function parseHashFile(hashFile) {

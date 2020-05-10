@@ -52,8 +52,7 @@ This tool helps you inspect your Google location history so that you can get a s
 <ol>
   <li>Go to <a target="_blank" href="https://takeout.google.com/settings/takeout">Google Takeout</a> to download an archive of your search data for your primary Google account. If you have more than one Google account that you frequently use, do this for each of the accounts.
   <ul>
-    <li>Under "Select data to include", choose only the "My Activity" option and turn everything else off. (It won't hurt to include other data, but it will take much longer to export and download). If "My Activity" is not available, you might have Google's search history turned off, or you might be using a Google G-Suite domain whose administrator has restricted data export.
-    <li>(Optional) To limit the activity to only location history, you can uncheck everything apart from "Location history". This will reduce the size of the Takeout download.
+    <li>Under "Select data to include", choose only the "Location History" option and turn everything else off. (It won't hurt to include other data, but it will take much longer to export and download). If "Location History" is not available, you might have Google's search history turned off, or you might be using a Google G-Suite domain whose administrator has restricted data export. Click here for instructions on how to turn on <a href="https://support.google.com/maps/answer/6258979">Location History</a>.
     <li>On the next step, keep all the default choices (".zip" file type) and select "Create archive". Wait for the export to finish - this can take several minutes - and then download the resulting zip file to your computer.
   </ul>
   <li>Select the "Choose files" button below and select the zip file(s) you downloaded above.
@@ -71,7 +70,7 @@ This tool helps you inspect your Google location history so that you can get a s
   <li>When you're done, close this browser tab and delete the Google Takeout zip file from your computer. If you'd like to delete items from your Google location history or change your location history settings based on what you've learned, head over to <a href="https://myaccount.google.com/activitycontrols/location">Google Activity Controls</a>.
 </ol>
 </p>
-<i>Repurposed from the brilliant <a href="https://github.com/social-machines/search-history-intersector">search-history-intersector</a>. Here's a recent <a href="https://docs.google.com/presentation/d/1luZS1ZnZdL2Eg3kOX82OQFnDwI5U-VoyJiZlnnjNE54/edit?usp=sharing">presentation</a> about this work. Please send comments and questions about this to <a href="mailto:dougb@cortico.ai">Doug Beeferman</a> and maybe <a href="mailto:roberton@gmail.com">Robert On</a></i></a>.
+<i>Repurposed from the brilliant <a href="https://github.com/social-machines/search-history-intersector">search-history-intersector</a>. Here's a recent <a href="https://docs.google.com/presentation/d/1luZS1ZnZdL2Eg3kOX82OQFnDwI5U-VoyJiZlnnjNE54/edit?usp=sharing">presentation</a> about that work. Please send comments and questions about this to <a href="mailto:dougb@cortico.ai">Doug Beeferman</a> and maybe <a href="mailto:roberton@gmail.com">Robert On</a>. Git repo <a href="https://github.com/roboton/location-history-intersector">here</a>.</i>
 </div>
 <center>
   <input class="inputfile" type="file" id="file" multiple />
