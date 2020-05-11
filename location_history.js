@@ -24,7 +24,7 @@ function parseZipFile(zipFile) {
       // note zip does not have a .map function, so we push manually into the array
       var numFiles = 0;
       zip.forEach(function (relativePath, zipEntry) {
-        if (zipEntry.name.match(/Location History\/Semantic Location History\/2020/)) {
+        if (zipEntry.name.match(/Location History\/Semantic Location History\/2020\//)) {
           // parse the file contents as a string
           fileParsePromises.push(
             zipEntry.async('string').then(function(data) {
@@ -152,6 +152,10 @@ function processDecompressedFiles(decompressedFiles) {
         // dataSet.push(extractActivity(tlObj.activitySegment));
       }
     }
+  }
+
+  if (oTable !== null) {
+    oTable.destroy();
   }
 
   oTable = $('#location_table').DataTable({
